@@ -847,7 +847,7 @@ plotStick(1,1,xlim=c(0,2),ylim=c(-2,+3),
 
 
 
-#Challenges
+# Challenges
 
 ## Challenge 1
 
