@@ -453,10 +453,10 @@ The somewhat cryptic output from this command indicates the basic data type
 found in this vector - in this case `chr`, character; an indication of the
 number of things in the vector - actually, the indexes of the vector, in this
 case `[1:3]`; and a few examples of what's actually in the vector - in this case
-empty character strings. If we similarly do
+empty character strings. 
 
 
-####Accessing vector elements
+### Accessing vector elements
 
 Specific vector elements might be accessed by position, starting from 1:
 ```{r}
@@ -764,7 +764,16 @@ cats.df
 write.csv(cats.df, "feline-data.csv", row.names = FALSE)
 ```
 
-Where is this .csv file?
+Where is this .csv file? If you do not specify a path to the file, it will be written in your current working directory. You can always check your working directory on the console tab or with:
+
+```{r}
+getwd()
+```
+or change with Session-->Set working directory:
+
+```{r}
+setwd()
+```
 
 The `read.table` function is used for reading in tabular data stored in a text
 file where the columns of data are separated by punctuation characters such as
@@ -783,11 +792,13 @@ ls()
 cats.df
 cats.df2
 ```
+R objects persist in the environment only for a session. However, you can save them and load in in the future:
 
 ```{r}
 save(cats.df, file="cats.df.Rdata")
 rm(cats.df)
 ls()
+list.files()
 load("cats.df.Rdata")
 ls()
 ```
