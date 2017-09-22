@@ -1,51 +1,10 @@
 ---
 title: "Introduction to R and RStudio"
-keypoints:
-- Use RStudio to write and run R programs.
-- R has the usual arithmetic operators and mathematical functions.
-- Use `<-` to assign values to variables.
-- Use `ls()` to list the variables in a program.
-- Use `rm()` to delete objects in a program.
-- Use `install.packages()` to install packages (libraries).
-objectives:
-- Describe the purpose and use of each pane in the RStudio IDE
-- Locate buttons and options in the RStudio IDE
-- Define a variable
-- Assign data to a variable
-- Manage a workspace in an interactive R session
-- Use mathematical and comparison operators
-- Call functions
-- Manage packages
-output:
-  html_document: default
-  pdf_document: default
-questions:
-- How to find your way around RStudio?
-- How to interact with R?
-- How to manage your environment?
-- How to install packages?
+author: "Anna Lorenc anna.lorenc@kcl.ac.uk"
 source: Rmd
 ---
 
 
-
-```{r, include=FALSE}
-source("../bin/chunk-options.R")
-knitr_fig_path("01-")
-```
-
-
-## Motivation
-
-Science is a multi-step process: once you've designed an experiment and collected
-data, the real fun begins! This lesson will teach you how to start this process using
-R and RStudio. We will begin with raw data, perform exploratory analyses, and learn
-how to plot results graphically. This example starts with a dataset from
-[gapminder.org](https://www.gapminder.org) containing population information for many
-countries through time. Can you read the data into R? Can you plot the population for
-Senegal? Can you calculate the average income for countries on the continent of Asia?
-By the end of these lessons you will be able to do things like plot the populations
-for all of these countries in under a minute!
 
 ## Before Starting The Workshop
 
@@ -796,7 +755,7 @@ str(exampleDataFrame)
 
 
 
-To write out a data frame
+To write out a data frame:
 ```{r}
 cats.df <- data.frame(coat = c("calico", "black", "tabby"),
                       weight = c(2.1, 5.0, 3.2),
@@ -903,16 +862,6 @@ What will be the value of each  variable  after each statement in the following 
  age <- 122
  mass <- mass * 2.3
  age <- age - 20
-```
-
-```{r, eval=FALSE, include=FALSE}
- mass <- 47.5
- age <- 122
- mass <- mass * 2.3
- age <- age - 20
- mass
- age
- 
 ```
 
 
