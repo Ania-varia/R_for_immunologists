@@ -1,0 +1,201 @@
+---
+title: "Introduction to R and RStudio part2 - challenges"
+author: "Anna Lorenc anna.lorenc@kcl.ac.uk"
+source: Rmd
+output: pdf_document
+---
+
+##### Challenge 1
+What do you think the following will produce?
+
+```{r}
+quiz_vector <- c(2,6,'3')
+```
+
+##### Challenge 2
+ Create a list of length two containing a character vector for each of the sections in this part of the workshop:
+
+ - Data types
+ - Data structures
+
+ Populate each character vector with the names of the data types and data
+ structures we've seen so far.
+
+###Sunshine data
+Data is in the location:
+
+`https://raw.githubusercontent.com/Ania-varia/R_for_immunologists/master/blob/data/`
+
+File of interest:
+`sunshine.csv`
+
+
+##### Challenge 3
+
+Given the following code:
+```{r}
+x <- c(5.4, 6.2, 7.1, 4.8, 7.5)
+names(x) <- c('a', 'b', 'c', 'd', 'e')
+```
+Write a subsetting command to return the values in x that are greater than 4 and less than 7.
+
+###GapMinder data
+Data is in the location:
+
+`https://raw.githubusercontent.com/swcarpentry/r-novice-gapminder/gh-pages/_episodes_rmd/data/`
+
+File of interest:
+`gapminder-FiveYearData.csv`
+
+##### Challenge 4
+
+Extract all rows with information about Montenegro  from the Gapminder data.
+
+##### Challenge 5
+
+Selecting elements of a vector that match any of a list of components
+is a very common data analysis task. For example, the gapminder data set
+contains `country` and `continent` variables, but no information between
+these two scales. Suppose we want to pull out information from southeast
+Asia: how do we set up an operation to produce a logical vector that
+is `TRUE` for all of the countries in southeast Asia and `FALSE` otherwise?
+
+Define SE Asia as:
+```{r, eval=FALSE}
+seAsia <- c("Myanmar","Thailand","Cambodia","Vietnam","Laos")
+```
+
+There's a wrong way (using only `==`), which will give you a warning;
+a clunky way (using the logical operators `==` and `|`); and
+an elegant way (using `%in%`). See whether you can come up with all three
+and explain how they (don't) work.
+
+##### Challenge 6
+
+Fix each of the following common data frame subsetting errors:
+
+1. Extract observations collected for the year 1957
+
+```{r, eval=FALSE}
+gapminder[gapminder$year = 1957,]
+```
+
+2. Extract all columns except 1 through to 4
+
+```{r, eval=FALSE}
+gapminder[,-1:4]
+```
+
+3. Extract the rows where the life expectancy is longer the 80 years
+
+```{r, eval=FALSE}
+gapminder[gapminder$lifeExp > 80]
+```
+
+4. Extract the first row, and the fourth and fifth columns
+  (`lifeExp` and `gdpPercap`).
+
+```{r, eval=FALSE}
+gapminder[1, 4, 5]
+```
+
+5. Advanced: extract rows that contain information for the years 2002
+and 2007
+
+```{r, eval=FALSE}
+gapminder[gapminder$year == 2002 | 2007,]
+```
+
+
+##### Challenge 7
+Create a new `data.frame` called `gapminder_small` that only contains rows 1 through 9 and 19 through 23. You can do this in one or two steps.
+
+##### Challenge 8
+Plot the population of Senegal in time.
+
+##### Challenge 9
+Calculate the average income for countries on the continent of Asia.
+
+
+  
+## Common R functions
+### Creating and saving data
+
+*  _c(),vector()_ create a vector
+*  _matrix()_ create a matrix
+*  _data.frame()_ create a data frame
+*  _list()_ create a list
+*  _cbind(), rbind()_ add columns/rows to matrix/data frame
+
+
+### Text and data processing
+
+*  _paste()_ paste character strings
+*  _sub()_ substitute in character strings
+*  _sort()_ sort elements
+*  _order()_ give order of elements
+*  _t()_ transpose a matrix
+*  _apply()_ perform a function column or row-wise
+
+
+### Accessing object elements
+
+*  _vector[index]_ index-th element of a vector
+*  _vector[elementName]_ element of a vector named elementName
+*  _object[rows, columns]_ elements in rows and columns of a matrix/dataframe
+*  _object[rownames, columnnames]_ elements in rows and columns of a matrix/dataframe
+*  _list[index]_ - output is a list
+*  _list[[index]]_ - output is a list element
+*  _list[[name]]_ or list$name - output is a list element
+*  _names(object)_ names of an object
+*  _colnames(object),rownames(object)_ column or row names of an object
+
+
+### Inspecting an object
+
+*  _length()_ length of an object
+*  _dim()_ dimensions  of an object
+*  _ncol(), nrow()_ number of columns or rowsof an object
+*  _head(), tail()_ show beginning or end of an object
+*  _str()_ structure of an object
+*  _class()_ class of an object
+*  _typeof() type of data
+*  _is.character(),is.numeric()_ check if object is of type character or numeric
+*  _as.character(), as.numeric(), as.data.frame(), as.factor()_ force an object into type character or numeric or factor, into class data.frame
+
+### Statistics
+
+*  _sum()_ arithmetic sum
+*  _mean()_ mean
+*  _sd()_ standard deviation
+*  _min(), max(), range(), summary()_ minimum, maximum or both
+*  _which.min(), which.max()_ which element of an object is min or max
+*  _rnorm()_ draw from a normal distribution
+*  _rowSums(), colSum()s, rowMeans(), colMeans()_ perform summing or average by rows or columns
+*  _t.test()_ perform t-test (see also prop.test(), chisq.test(), wilcox.test())
+*  _cor.test()_ correlation
+*  _rnorm()_ -draw from a nomal distribution
+
+### Plots
+
+*  _plot()_ plot, type of plot depends on data
+*  _barlot()_ 
+*  _boxplot()_
+*  _hist()_ histogram
+*  _abline()_ add a line to an existing plot
+*  _text()_ add text labels to an existing plot
+*  _legend()_ add legend to an existing plot
+
+### Workspace and environment
+
+*  _ls()_ show objects in the workspace
+*  _rm()_ remove objects
+*  _read.table()_ read data from a file into a data frame
+*  _write.table()_ output a data frame into a file
+*  _save()_ save objects into .Rdata file
+*  _load()_ load objects from a .Rdata file
+*  _getwd()_ print working directory
+*  _setwd()_ set working directory
+*  _list.files()_ list files from a directory
+*  _install.package()_ install a package
+*  _library(), require()_  load a package
