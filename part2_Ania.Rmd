@@ -393,14 +393,14 @@ text(labels = month.name, sunshine$London,sunshine$Madrid,adj = c(1,1))
 
 
 
-###Boxplot
+### Boxplot
 
 ```{r, eval=FALSE , results='hide'}
 # boxplot - to compare sunny hours by location
 boxplot(sunshine, col=2:3)
 ```
 
-###Barplot
+### Barplot
 
 ```{r ,eval=FALSE , results='hide'}
 rownames(sunshine) <- month.name
@@ -408,7 +408,7 @@ sunshine
 barplot(as.matrix(sunshine), beside=TRUE, col=1:12, main="Sunshine hours per month")
 ```
 
-###Histogram 
+### Histogram 
 
 ```{r , eval=FALSE , results='hide'}
 height <- rnorm(mean=164, sd=6, n=1000)
@@ -707,7 +707,7 @@ Calculate the average income for countries on the continent of Asia
 *  _head(), tail()_ show beginning or end of an object
 *  _str()_ structure of an object
 *  _class()_ class of an object
-*  _typeof() type of data
+*  _typeof()_ type of data
 *  _is.character(),is.numeric()_ check if object is of type character or numeric
 *  _as.character(), as.numeric(), as.data.frame(), as.factor()_ force an object into type character or numeric or factor, into class data.frame
 
