@@ -1,0 +1,749 @@
+---
+title: "Introduction to R and RStudio part 2"
+author: "Anna Lorenc anna.lorenc@kcl.ac.uk"
+source: Rmd
+output: pdf_document
+---
+
+## Data Structures
+
+One of R's most powerful features is its ability to deal with tabular data -
+such as you may already have in a spreadsheet or a CSV file. Let's start by
+making a toy dataset in your `data/` directory, called `feline-data.csv`:
+
+```{r, eval=FALSE , results='hide'}
+coat,weight,likes_string
+calico,2.1,1
+black,5.0,0
+tabby,3.2,1
+```
+
+> ####Tip: Editing Text files in R
+>
+> Alternatively, you can create `data/feline-data.csv` using a text editor,
+> or within RStudio with the **File -> New File -> Text File** menu item.
+
+
+```{r, echo = FALSE, results='hide' , results='hide'}
+cats.df <- data.frame(coat = c("calico", "black", "tabby"),
+                      weight = c(2.1, 5.0, 3.2),
+                      likes_string = c(1, 0, 1))
+
+write.csv(cats.df, "feline-data.csv", row.names = FALSE)
+```
+
+We can load this into R via the following:
+
+```{r  , results='hide'}
+cats <- read.csv(file = "feline-data.csv")
+cats
+```
+
+
+We can begin exploring our dataset right away, pulling out columns by specifying
+them using the `$` operator:
+
+```{r , results='hide'}
+cats$weight
+cats$coat
+```
+
+We can do other operations on the columns:
+
+```{r , results='hide'}
+## Say we discovered that the scale weighs two Kg light:
+cats$weight + 2
+paste("My cat is", cats$coat)
+```
+
+But what about:
+
+```{r, eval=FALSE , results='hide'}
+cats$weight + cats$coat
+```
+
+Understanding what happened here is key to successfully analyzing data in R.
+
+## Data Types
+
+If you guessed that the last command will return an error because `2.1` plus
+`"black"` is nonsense, you're right - and you already have some intuition for an
+important concept in programming called *data types*. We can ask what type of
+data something is:
+
+```{r , results='hide'}
+typeof(cats$weight)
+```
+
+There are 5 main types: `double`, `integer`, `complex`, `logical` and `character`.
+
+```{r , results='hide'}
+typeof(3.14)
+typeof(1L) # The L suffix forces the number to be an integer, since by default R uses float numbers
+typeof(1+1i)
+typeof(TRUE)
+typeof('banana')
+```
+
+No matter how complicated our analyses become, all data in R is interpreted as one of these
+basic data types. This strictness has some really important consequences.
+
+A user has added details of another cat. This information is in the data frame cats_bad:
+
+
+```{r , results='hide'}
+cats_bad <- data.frame(coat = factor(c("calico", "black", "tabby", "tabby")),
+                   weight = factor(c(2.1, 5.0, 3.2, '2.3 or 2.4')),
+                   likes_string = c(1, 0, 1, 1))
+```
+
+Check what type of data we find in the
+`weight` column:
+
+```{r , results='hide'}
+cats_bad
+typeof(cats_bad$weight)
+```
+
+Oh no, our weights aren't the double type anymore! If we try to do the same math
+we did on them before, we run into trouble:
+
+```{r , results='hide'}
+cats$weight + 2
+```
+
+What happened? Within a data.frame each column may be of different type, but within a column type has to be the same.
+R insists that everything in a column be the same basic type; if it can't understand
+*everything* in the column as a double, then *nobody* in the column gets to be a
+double. 
+
+
+> 
+>
+> Why is R so opinionated about what we put in our columns of data?
+> How does this help us?
+
+> >
+> > By keeping everything in a column the same, we allow ourselves to make simple
+> > assumptions about our data; if you can interpret one entry in the column as a
+> > number, then you can interpret *all* of them as numbers, so we don't have to
+> > check every time. This consistency is what people mean when they talk about 
+> > *clean data*; in the long run, strict consistency goes a long way to making 
+> > our lives easier in R.
+
+
+```{r , results='hide'}
+str(cats$weight)
+```
+
+we see that `cats$weight` is a vector, too - *the columns of data in
+data.frames are all vectors*, and that's the root of why R forces everything in
+a column to be the same basic data type.
+
+
+##### Challenge 1
+What do you think the following will produce?
+
+```{r , results='hide'}
+quiz_vector <- c(2,6,'3')
+```
+
+This is something called *type coercion*, and it is the source of many surprises
+and the reason why we need to be aware of the basic data types and how R will
+interpret them. When R encounters a mix of types (here numeric and character) to
+be combined into a single vector, it will force them all to be the same
+type. Consider:
+
+```{r , results='hide'}
+coercion_vector <- c('a', TRUE)
+coercion_vector
+another_coercion_vector <- c(0, TRUE)
+another_coercion_vector
+```
+
+The coercion rules go: `logical` -> `integer` -> `numeric` -> `complex` ->
+`character`, where -> can be read as *are transformed into*. You can try to
+force coercion against this flow using the `as.` functions:
+
+```{r , results='hide'}
+character_vector_example <- c('0','2','4')
+character_vector_example
+character_coerced_to_numeric <- as.numeric(character_vector_example)
+character_coerced_to_numeric
+numeric_coerced_to_logical <- as.logical(character_coerced_to_numeric)
+numeric_coerced_to_logical
+```
+
+As you can see, some surprising things can happen when R forces one basic data
+type into another! Nitty-gritty of type coercion aside, the point is: if your
+data doesn't look like what you thought it was going to look like, type coercion
+may well be to blame; make sure everything is the same type in your vectors and
+your columns of data.frames, or you will get nasty surprises!
+
+But coercion can also be very useful! For example, in our `cats` data
+`likes_string` is numeric, but we know that the 1s and 0s actually represent
+`TRUE` and `FALSE` (a common way of representing them). We should use the
+`logical` datatype here, which has two states: `TRUE` or `FALSE`, which is
+exactly what our data represents. We can 'coerce' this column to be `logical` by
+using the `as.logical()` function:
+
+```{r , results='hide'}
+cats$likes_string
+cats$likes_string <- as.logical(cats$likes_string)
+cats$likes_string
+```
+
+We said that columns in data.frames were vectors:
+
+```{r , results='hide'}
+str(cats$weight)
+str(cats$likes_string)
+```
+
+These make sense. But what about
+
+```{r , results='hide'}
+str(cats$coat)
+```
+
+## Factors
+
+Another important data structure is called a *factor*. Factors usually look like
+character data, but are typically used to represent categorical information. For
+example, let's make a vector of strings labelling cat colorations for all the
+cats in our study:
+
+```{r , results='hide'}
+coats <- c('tabby', 'tortoiseshell', 'tortoiseshell', 'black', 'tabby')
+coats
+str(coats)
+```
+
+We can turn a vector into a factor like so:
+
+```{r , results='hide'}
+CATegories <- factor(coats)
+class(CATegories)
+str(CATegories)
+```
+
+Now R has noticed that there are three possible categories in our data - but it
+also did something surprising; instead of printing out the strings we gave it,
+we got a bunch of numbers instead. R has replaced our human-readable categories
+with numbered indices under the hood, this is necessary as many statistical
+calculations utilise such numerical representations for categorical data:
+
+```{r , results='hide'}
+typeof(coats)
+typeof(CATegories)
+```
+
+
+```{r , results='hide'}
+class(cats)
+```
+
+
+
+Is there a factor in our `cats` data.frame? what is its name?
+Try using `?read.csv` to figure out how to keep text columns as character
+vectors instead of factors; then write a command or two to show that the factor
+in `cats` is actually a character vector when loaded in this way.
+
+In modelling functions, it's important to know what the baseline levels are. This
+is assumed to be the first factor, but by default factors are labelled in
+alphabetical order. You can change this by specifying the levels:
+
+```{r , results='hide'}
+mydata <- c("case", "control", "control", "case")
+factor(mydata)
+factor_ordering_example <- factor(mydata, levels = c("control", "case"))
+str(factor_ordering_example)
+```
+
+In this case, we've explicitly told R that "control" should represented by 1, and
+"case" by 2.
+
+## Lists
+
+Another data structure you'll want in your bag of tricks is the `list`. A list
+is simpler in some ways than the other types, because you can put anything you
+want in it:
+
+```{r , results='hide'}
+list_example <- list(1, "a", TRUE, 1+4i)
+list_example
+another_list <- list(title = "Numbers", numbers = 1:10, data = TRUE )
+another_list
+```
+
+Slicing and accessing list elements. What are the outputs?
+```{r  , results='hide'}
+another_list[[1]]
+another_list[1:2]
+names(another_list) 
+another_list[["title"]]
+another_list[["myPatients"]] <- cats 
+another_list
+
+```
+
+
+We can now understand something a bit surprising in our data.frame; what happens if we run:
+
+```{r , results='hide'}
+typeof(cats)
+```
+
+We see that data.frames look like lists 'under the hood' - this is because a
+data.frame is really a list of vectors and factors, as they have to be - in
+order to hold those columns that are a mix of vectors and factors, the
+data.frame needs something a bit more flexible than a vector to put all the
+columns together into a familiar table.  In other words, a `data.frame` is a
+special list in which all the vectors must have the same length.
+
+In our `cats` example, we have an integer, a double and a logical variable. As
+we have seen already, each *column* of data.frame is a vector.
+
+```{r , results='hide'}
+cats$coat
+cats[,1]
+typeof(cats[,1])
+str(cats[,1])
+```
+
+Each row is an *observation* of different variables, itself a data.frame, and
+thus can be composed of elements of different types.
+
+```{r , results='hide'}
+cats[1,]
+typeof(cats[1,])
+str(cats[1,])
+```
+
+
+
+
+##### Challenge 2
+ Create a list of length two containing a character vector for each of the sections in this part of the workshop:
+
+ - Data types
+ - Data structures
+
+ Populate each character vector with the names of the data types and data
+ structures we've seen so far.
+
+
+
+## Solution to Challenge 2
+```{r , results='hide'}
+dataTypes <- c('double', 'complex', 'integer', 'character', 'logical')
+dataStructures <- c('data.frame', 'vector', 'factor', 'list', 'matrix')
+answer <- list(dataTypes, dataStructures)
+```
+
+
+##Useful R functions
+
+There are thousands of these - some in the basic R installation, some in additional packages. Let's try some of them.
+First, download a file with data.
+```{r  , results='hide'}
+sunshine <- read.csv("https://raw.githubusercontent.com/Ania-varia/R_for_immunologists/master/blob/data/sunshine.csv")
+str(sunshine)
+sunshine
+```
+
+Let's compare something obvious with a statistical test already implemented in R. 
+
+```{r, eval=FALSE , results='hide'}
+# Here the function needs more than one argument (we compare two groups!)
+t.test(x=London, y=Madrid, data =sunshine)
+```
+
+Result of a test might be assigned to an object. Let's do it and add yet another argument to the function
+
+```{r, eval=FALSE , results='hide'}
+exampleTtest <- t.test(x=sunshine$London, y=sunshine$Madrid, paired=TRUE)
+exampleTtest
+```
+
+It is also possible to draw from distributions - here from normal, we need to specify mean and sd 
+```{r , results='hide'}
+# 
+height <- rnorm(mean=164, sd=6, n=1000)
+height
+```
+
+
+## Graphics 
+R allows to make basic or very refined plots, especially with help of graphical packages like lattice/ggplot etc. 
+Plots might be fine-tuned with additional parameters. Low-level graphical functions add elements like points, labels, axes, lines and legend.
+
+```{r, eval=FALSE , results='hide'}
+
+
+plot(sunshine$London,sunshine$Madrid)
+plot(sunshine$London,sunshine$Madrid,xlim = c(20,370), ylim=c(20, 370))
+plot(sunshine$London,sunshine$Madrid,xlim = c(20,370), ylim=c(20, 370),xlab = "London", ylab="Madrid")
+plot(sunshine$London,sunshine$Madrid,xlim = c(20,370), ylim=c(20, 370),xlab = "London", ylab="Madrid", col="red", pch=19, main= "Monthly hours of sunshine")
+abline(a = 0, b=1)
+text(labels = month.name, sunshine$London,sunshine$Madrid,adj = c(1,1))
+
+```
+
+
+
+###Boxplot
+
+```{r, eval=FALSE , results='hide'}
+# boxplot - to compare sunny hours by location
+boxplot(sunshine, col=2:3)
+```
+
+###Barplot
+
+```{r ,eval=FALSE , results='hide'}
+rownames(sunshine) <- month.name
+sunshine
+barplot(as.matrix(sunshine), beside=TRUE, col=1:12, main="Sunshine hours per month")
+```
+
+###Histogram 
+
+```{r , eval=FALSE , results='hide'}
+height <- rnorm(mean=164, sd=6, n=1000)
+#Another very useful type of plot - histogram
+hist(height)
+# It is possible to fine-tune breaks by size or number
+hist(height, breaks=100)
+# Polishing the plot: proper title and axis names
+hist(height, breaks=100, main= "Height of UK women", xlab= "cm") 
+# adding elements: here a vertical line of the true mean
+abline(v=164, col="red", lwd=2) #low level plotting function
+# legend
+legend(lwd=2, col="red", legend="actual mean", "topright")
+```
+
+
+### It is possible to plot straight to a file (.jpg, .pdf, .eps...)
+```{r,  eval=FALSE  , results='hide'}
+
+
+pdf("height_women_UK.pdf") # To start plotting to a file
+  hist(height, breaks=100, main= "Height of UK women", xlab= "cm")
+  abline(v=164, col="red", lwd=2)
+  legend(lwd=2, col="red", legend="actual mean", "topright")
+dev.off()                 #To close the file
+
+```
+
+## Working with data
+
+Let's work with some more substantial dataset.
+You can directly from R download a file from the internet:
+
+```{r, eval=FALSE , results='hide'}
+download.file("https://raw.githubusercontent.com/swcarpentry/r-novice-gapminder/gh-pages/_episodes_rmd/data/gapminder-FiveYearData.csv", destfile = "data/gapminder-FiveYearData.csv")
+gapminder <- read.csv("data/gapminder-FiveYearData.csv")
+
+```
+
+You can read directly from excel spreadsheets without converting them to plain text first by using the [readxl](https://cran.r-project.org/web/packages/readxl/index.html) package.
+
+The first thing we should always do is check out what the data looks like with `str`:
+
+```{r, eval=FALSE , results='hide'}
+str(gapminder)
+```
+
+We can also examine individual columns of the data frame with our `typeof` function:
+
+```{r, eval=FALSE , results='hide'}
+typeof(gapminder$year)
+typeof(gapminder$country)
+str(gapminder$country)
+```
+
+We can also interrogate the data frame for information about its dimensions;
+remembering that `str(gapminder)` said there were 1704 observations of 6
+variables in gapminder, what do you think the following will produce, and why?
+
+```{r, eval=FALSE , results='hide'}
+length(gapminder)
+```
+
+
+A fair guess would have been to say that the length of a data frame would be the
+number of rows it has (1704), but this is not the case; remember, a data frame
+is a *list of vectors and factors*
+
+Now check for number of rows and columns and column names.
+
+
+At this stage, it's important to ask ourselves if the structure R is reporting
+matches our intuition or expectations; do the basic data types reported for each
+column make sense? If not, we need to sort any problems out now before they turn
+into bad surprises down the road, using what we've learned about how R
+interprets data, and the importance of *strict consistency* in how we record our
+data.
+
+Once we're happy that the data types and structures seem reasonable, it's time
+to start digging into our data proper. Check out the first few lines:
+
+
+```{r, eval=FALSE , results='hide'}
+head(gapminder)
+```
+
+
+Check how many different countries are in this data frame. Tip: unique() will list unique elements of a vector.
+
+### Subsetting through logical operations
+
+We can also use any logical vector to subset:
+
+```{r , results='hide'}
+x <-3:8
+x
+x[c(FALSE, FALSE, TRUE, FALSE, TRUE)]
+```
+
+Since comparison operators (e.g. `>`, `<`, `==`) evaluate to logical vectors, we can also
+use them to succinctly subset vectors: the following statement gives
+the same result as the previous one.
+
+```{r , results='hide'}
+x[x > 7]
+```
+
+Breaking it down, this statement first evaluates `x>7`, generating
+a logical vector `c(FALSE, FALSE, TRUE, FALSE, TRUE)`, and then
+selects the elements of `x` corresponding to the `TRUE` values.
+
+We can use `==` to mimic the previous method of indexing by name
+(remember you have to use `==` rather than `=` for comparisons):
+
+```{r , results='hide'}
+names(x)=letters[1:6]
+x[names(x) == "d"]
+```
+
+####  Combining logical conditions
+
+We often want to combine multiple logical
+criteria. For example, we might want to find all the countries that are
+located in Asia **or** Europe **and** have life expectancies within a certain
+range. Several operations for combining logical vectors exist in R:
+
+ * `&`, the "logical AND" operator: returns `TRUE` if both the left and right
+   are `TRUE`.
+ * `|`, the "logical OR" operator: returns `TRUE`, if either the left or right
+   (or both) are `TRUE`.
+
+You may sometimes see `&&` and `||` instead of `&` and `|`. These two-character operators
+only look at the first element of each vector and ignore the
+remaining elements. In general you should not use the two-character
+operators in data analysis; save them
+for programming, i.e. deciding whether to execute a statement.
+
+ * `!`, the "logical NOT" operator: converts `TRUE` to `FALSE` and `FALSE` to
+   `TRUE`. It can negate a single logical condition (eg `!TRUE` becomes
+   `FALSE`), or a whole vector of conditions(eg `!c(TRUE, FALSE)` becomes
+   `c(FALSE, TRUE)`).
+
+Additionally, you can compare the elements within a single vector using the
+`all` function (which returns `TRUE` if every element of the vector is `TRUE`)
+and the `any` function (which returns `TRUE` if one or more elements of the
+vector are `TRUE`).
+
+
+#### Challenge 3
+
+Given the following code:
+
+```{r , results='hide'}
+x <- c(5.4, 6.2, 7.1, 4.8, 7.5)
+names(x) <- c('a', 'b', 'c', 'd', 'e')
+print(x)
+```
+
+Write a subsetting command to return the values in x that are greater than 4 and less than 7.
+
+
+#### Challenge 4
+
+Extract all rows with information about Montenegro from the Gapminder data.
+
+#### Challenge 5
+
+Selecting elements of a vector that match any of a list of components
+is a very common data analysis task. For example, the gapminder data set
+contains `country` and `continent` variables, but no information between
+these two scales. Suppose we want to pull out information from southeast
+Asia: how do we set up an operation to produce a logical vector that
+is `TRUE` for all of the countries in southeast Asia and `FALSE` otherwise?
+
+Define SE Asia as:
+```{r, eval=FALSE , results='hide'}
+seAsia <- c("Myanmar","Thailand","Cambodia","Vietnam","Laos")
+```
+
+There's a wrong way (using only `==`), which will give you a warning;
+a clunky way (using the logical operators `==` and `|`); and
+an elegant way (using `%in%`). See whether you can come up with all three
+and explain how they (don't) work.
+
+
+
+## Factor subsetting
+
+Now that we've explored the different ways to subset vectors, how
+do we subset the other data structures?
+
+Factor subsetting works the same way as vector subsetting.
+
+```{r , results='hide'}
+f <- factor(c("a", "a", "b", "c", "c", "d"))
+f[f == "a"]
+f[f %in% c("b", "c")]
+f[1:3]
+```
+
+Skipping elements will not remove the level
+even if no more of that category exists in the factor:
+
+```{r , results='hide'}
+f[-3]
+```
+
+#### Challenge 6
+
+Fix each of the following common data frame subsetting errors:
+
+1. Extract observations collected for the year 1957
+
+```{r, eval=FALSE , results='hide'}
+gapminder[gapminder$year = 1957,]
+```
+
+2. Extract all columns except 1 through to 4
+
+```{r, eval=FALSE , results='hide'}
+gapminder[,-1:4]
+```
+
+3. Extract the rows where the life expectancy is longer the 80 years
+
+```{r, eval=FALSE , results='hide'}
+gapminder[gapminder$lifeExp > 80]
+```
+
+4. Extract the first row, and the fourth and fifth columns
+  (`lifeExp` and `gdpPercap`).
+
+```{r, eval=FALSE , results='hide'}
+gapminder[1, 4, 5]
+```
+
+5. Advanced: extract rows that contain information for the years 2002
+and 2007
+
+```{r, eval=FALSE , results='hide'}
+gapminder[gapminder$year == 2002 | 2007,]
+```
+
+
+#### Challenge 7
+ Create a new `data.frame` called `gapminder_small` that only contains rows 1 through 9
+ and 19 through 23. You can do this in one or two steps.
+
+#### Challenge 8
+Plot the population for Senegal in time 
+
+#### Challenge 9
+Calculate the average income for countries on the continent of Asia
+
+
+  
+## Common R functions
+
+### Creating and saving data
+
+*  _c(),vector()_ create a vector
+*  _matrix()_ create a matrix
+*  _data.frame()_ create a data frame
+*  _list()_ create a list
+*  _cbind(), rbind()_ add columns/rows to matrix/data frame
+
+
+### Text and data processing
+
+*  _paste()_ paste character strings
+*  _sub()_ substitute in character strings
+*  _sort()_ sort elements
+*  _order()_ give order of elements
+*  _t()_ transpose a matrix
+*  _apply()_ perform a function column or row-wise
+
+
+### Accessing object elements
+
+*  _vector[index]_ index-th element of a vector
+*  _vector[elementName]_ element of a vector named elementName
+*  _object[rows, columns]_ elements in rows and columns of a matrix/dataframe
+*  _object[rownames, columnnames]_ elements in rows and columns of a matrix/dataframe
+*  _list[index]_ - output is a list
+*  _list[[index]]_ - output is a list element
+*  _list[[name]]_ or list$name - output is a list element
+*  _names(object)_ names of an object
+*  _colnames(object),rownames(object)_ column or row names of an object
+
+
+### Inspecting an object
+
+*  _length()_ length of an object
+*  _dim()_ dimensions  of an object
+*  _ncol(), nrow()_ number of columns or rowsof an object
+*  _head(), tail()_ show beginning or end of an object
+*  _str()_ structure of an object
+*  _class()_ class of an object
+*  _typeof() type of data
+*  _is.character(),is.numeric()_ check if object is of type character or numeric
+*  _as.character(), as.numeric(), as.data.frame(), as.factor()_ force an object into type character or numeric or factor, into class data.frame
+
+### Statistics
+
+*  _sum()_ arithmetic sum
+*  _mean()_ mean
+*  _sd()_ standard deviation
+*  _min(), max(), range(), summary()_ minimum, maximum or both
+*  _which.min(), which.max()_ which element of an object is min or max
+*  _rnorm()_ draw from a normal distribution
+*  _rowSums(), colSum()s, rowMeans(), colMeans()_ perform summing or average by rows or columns
+*  _t.test()_ perform t-test (see also prop.test(), chisq.test(), wilcox.test())
+*  _cor.test()_ correlation
+*  _rnorm()_ -draw from a nomal distribution
+
+### Plots
+
+*  _plot()_ plot, type of plot depends on data
+*  _barlot()_ 
+*  _boxplot()_
+*  _hist()_ histogram
+*  _abline()_ add a line to an existing plot
+*  _text()_ add text labels to an existing plot
+*  _legend()_ add legend to an existing plot
+
+### Workspace and environment
+
+*  _ls()_ show objects in the workspace
+*  _rm()_ remove objects
+*  _read.table()_ read data from a file into a data frame
+*  _write.table()_ output a data frame into a file
+*  _save()_ save objects into .Rdata file
+*  _load()_ load objects from a .Rdata file
+*  _getwd()_ print working directory
+*  _setwd()_ set working directory
+*  _list.files()_ list files from a directory
+*  _install.package()_ install a package
+*  _library(), require()_  load a package
