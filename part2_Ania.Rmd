@@ -343,7 +343,7 @@ answer <- list(dataTypes, dataStructures)
 ```
 
 
-##Useful R functions
+## Useful R functions
 
 There are thousands of these - some in the basic R installation, some in additional packages. Let's try some of them.
 First, download a file with data.
