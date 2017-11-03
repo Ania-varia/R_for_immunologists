@@ -1,0 +1,209 @@
+---
+title: "GGplot"
+author: "Anna Lorenc"
+date: "10/16/2017"
+output: pdf_document
+---
+
+
+
+```{r echo=FALSE, eval=FALSE}
+data_for_plot <- clean_from_comment_columns(manual_fract_MLN_postsplit, columns_to_not_take_in = c(
+             "Chip",
+             "Hitachi_Cup",
+             "Facs_Sample_Status",
+             "Panel",
+             "Pipeline",
+             "Anaesthetic",
+             "PIL",
+             "Blood_Volume",
+             "Colony",
+             "Equipment",
+             "Strip",
+             "Restrained",
+             "Strain",
+             "Open_Field_Box_Number",
+             "Software",
+             "Pil_Holder",
+             "Colony_Name",
+             "Coat|Cohort",
+             "Complete",
+             "Experiment",
+             "Serial_No|Gender.|Genotype.",
+             "Comment",
+             "Gene_Name.",
+             "Mouse_Name."
+           ))
+
+data_for_plot <-data_for_plot[, grep("count", colnames(data_for_plot ), invert = TRUE), with=F]
+
+save(data_for_plot, file="data_for_plot.Rdata")
+```
+
+
+First, let's prepare a play dataset. The package `ggplot` comes with in-buit dataset diamonds. As it is very big, we'll prepare a subset `diamonds_small` by randomly choosing 4000 entries.
+
+
+```{r ,  eval=FALSE}
+diamonds
+diamonds <- data.frame(diamonds)
+dim(diamonds)
+
+diamonds_small <-diamonds[sample(1:nrow(diamonds), 4000),]
+
+```
+
+#General syntax:
+
+  `ggplot(data=<DATA>) + <GEOM_FUNCTION>(mapping=aes(<MAPPINGS>))`
+
+
+```{r ,  eval=FALSE}
+ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price))
+
+ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price, colour=cut)) # notice the legend
+
+ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price, colour=color)) 
+
+ggplot(data = diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price, colour=color, shape=cut))
+
+
+```
+
+  
+Available aesthetics depend on the geom. Most used:
+
+* x, y,
+* col, fill,  alpha,
+* linetype, linewidth,
+* shape, size.
+
+
+Instead of specyfying aesthetics by mapping, we can use a direct assignement:
+
+```{r,  eval=FALSE}
+ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price), colour="red")
+
+ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price), shape=3 )
+
+ggplot(data=diamonds_small ) +
+  geom_point(mapping=aes(x=carat, y=price), shape=3, size=3 )
+
+```
+
+Plot might be directly printed or stored in an object. This object might be printed on screen or into a file. It might be also modified and combined with other plots.
+
+```{r,  eval=FALSE}
+g_diamonds_col <- ggplot(data=diamonds_small ) + 
+  geom_point(mapping=aes(x=carat, y=price, colour=color))
+
+g_diamonds_col 
+
+ggsave(g_diamonds_col, file="g_diamonds_col.pdf")
+
+ggsave(g_diamonds_col, file="g_diamonds_col.pdf", width=22, height = 20, units = "cm")
+
+```
+ 
+ 
+### Some other geoms
+
+##### Boxplot 
+```{r,  eval=FALSE}
+ggplot(data=diamonds) + 
+  geom_boxplot(mapping=aes(x=cut, y=price))
+
+ggplot(data=diamonds) + 
+  geom_boxplot(mapping=aes(x=cut, y=price, colour=cut))
+
+ggplot(data=diamonds) + 
+  geom_boxplot(mapping=aes(x=cut, y=price, fill=cut))
+
+ggplot(data=diamonds) + 
+  geom_boxplot(mapping=aes(x=cut, y=price, fill=color))
+
+ggplot(data=diamonds) + 
+  geom_boxplot(mapping=aes(x=cut, y=price, fill=color), notch=TRUE)
+```
+
+##### Violin plot 
+```{r, eval=FALSE}
+ggplot(data=diamonds) + 
+  geom_violin(mapping=aes(x=cut, y=price))
+
+```
+
+##### Histogram
+```{r, eval=FALSE}
+ggplot(data=diamonds) + 
+  geom_histogram(mapping=aes(x=price, fill=cut), col="black")
+
+```
+
+
+##### Fitted line 
+By default a loess fit with confidence intervals, might be changed.
+```{r, eval=FALSE}
+ggplot(data=diamonds) + 
+  geom_smooth(mapping=aes(y=price, x=carat))
+
+ggplot(data=diamonds) + 
+  geom_smooth(mapping=aes(y=price, x=carat, col=cut))
+```
+
+And ~30 other geoms.
+
+### Combining layers
+A geom defines one layer of a plot, we can combine layers:
+
+```{r,  eval=FALSE}
+ggplot(data=diamonds_small) +
+  geom_point(mapping=aes(x=carat, y=price, col=cut) ) +
+  geom_smooth(mapping=aes(y=price, x=carat, col=cut)) 
+```
+
+
+### Plot fine-tuning:
+
+
+* setting plot limits
+* changing axes
+* log-scale
+* adding title and axis names
+* changing tick names
+* removing plot elements(ticks, axes, legend)
+* manually defining colours, shapes etc.
+
+```{r, echo=FALSE, eval=FALSE} 
+ ggplot(data=diamonds_small) +
+  geom_point(mapping=aes(x=carat, y=price, colour=color, shape=cut), size=4) +
+  xlim(1.5, 3) +
+  ylim(10000, 20000)
+
+ggplot(data=diamonds_small) +
+  geom_point(mapping=aes(x=carat, y=price, colour=color, shape=cut), size=4) +
+  xlim(1.5, 3) +
+  ylim(10000, 20000)+
+  coord_flip()
+
+```
+
+
+### Facetting 
+
+Splitting data into facets by categorical variables (one or more)
+
+```{r,  eval=FALSE}
+ggplot(data=diamonds_small) +
+  geom_point(mapping=aes(x=carat, y=price, col=cut) )+
+  facet_wrap(~clarity)
+```
+
+
+Package `cowplot` for arranging several plots into figures (think: histogram on top of a scatterplot). 
