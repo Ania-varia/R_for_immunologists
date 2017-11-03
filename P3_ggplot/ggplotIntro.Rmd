@@ -7,38 +7,6 @@ output: pdf_document
 
 
 
-```{r echo=FALSE, eval=FALSE}
-data_for_plot <- clean_from_comment_columns(manual_fract_MLN_postsplit, columns_to_not_take_in = c(
-             "Chip",
-             "Hitachi_Cup",
-             "Facs_Sample_Status",
-             "Panel",
-             "Pipeline",
-             "Anaesthetic",
-             "PIL",
-             "Blood_Volume",
-             "Colony",
-             "Equipment",
-             "Strip",
-             "Restrained",
-             "Strain",
-             "Open_Field_Box_Number",
-             "Software",
-             "Pil_Holder",
-             "Colony_Name",
-             "Coat|Cohort",
-             "Complete",
-             "Experiment",
-             "Serial_No|Gender.|Genotype.",
-             "Comment",
-             "Gene_Name.",
-             "Mouse_Name."
-           ))
-
-data_for_plot <-data_for_plot[, grep("count", colnames(data_for_plot ), invert = TRUE), with=F]
-
-save(data_for_plot, file="data_for_plot.Rdata")
-```
 
 
 First, let's prepare a play dataset. The package `ggplot` comes with in-buit dataset diamonds. As it is very big, we'll prepare a subset `diamonds_small` by randomly choosing 4000 entries.
