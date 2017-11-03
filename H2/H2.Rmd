@@ -1,0 +1,82 @@
+---
+title: "Introduction to R and RStudio part2 - homework2"
+author: "Anna Lorenc anna.lorenc@kcl.ac.uk"
+source: Rmd
+output: pdf_document
+---
+
+#### Challenge 1
+
+1. Read in the file `APCmin_Natalie_data` into an object `mouse_big`
+
+2. Print out the whole data frame
+
+3. Print out just the beginning with function `head(DATA_FRAME_NAME)`
+
+4. How many rows has `mouse_big`? Does the number of rows include column names?
+
+5. Extract a vector with mouse names. How many entries it has? To check vector length, use `length()`.
+
+5. How many mice are in the table? To see only unique mouse names, use `unique(VECTOR)`.
+
+6. How many times was the mouse "AHDT5.1a" weighted? Hint: use in your code `mouse_big$Mouse=="AHDT5.1a"`
+
+7. Add an age column, as in previous homework.
+
+8. Order mice by names. Hint: use function `order()`.
+
+9. Extract all weightings of mouse AHDT5.1h and keep in an object `mouse_AHDT5.1h`. Take only columns with weighht, mouse name, birth date and age.
+
+10. Change column names in `mouse_AHDT5.1h`: it should be "sex" instead of "gender". Write this data frame now out as a csv file.
+
+11. Compute average of all female weights in `mouse_big` for mice 14 weeks old.
+
+12. Compare male and female weights for mice  14 weeks old with t-test. 
+
+13. Plot a histogram of weight for all mice aged 14 weeks. Annotate and embelish the plot (fill it with a colour, add a meaningful title and label axes).
+
+14. By default, when you plot, the plot is rendered in the plot pane. If you start another plotting device before plotting and close it afterwards, you might plot to a jpg, pdf, eps or other file. 
+
+```{r, eval=FALSE }
+pdf("NAME_FOR_MY_PDF.pdf")
+  hist(mousebig$weight)
+  #you might add other plotting commands
+dev.off()
+
+```
+  Prepare a pdf file with this histogram.
+and add age column, as in Challenge 1.
+
+15. Plot a boxplot of all male vs.all female weights to a pdf file. For a boxplot, use the plotting function `boxplot()`:
+
+
+```{r, eval=FALSE }
+ boxplot( VARIABLE ~ GROUPING), for example:
+ boxplot(bigmouse$Weight ~ bigmouse$Gender)
+
+```
+
+
+#### Challenge 2
+
+```{r, echo=FALSE, eval=FALSE}
+res=lapply(unique(bigmouse$age), function(x){
+  males=bigmouse[age==x][Gender=="Male", Weight]
+  females=bigmouse[age==x][Gender=="Female", Weight]
+  print(x)
+  comparison=t.test(males, females)
+  return(list(males=data.frame(males),females=data.frame(females), age=x, comparison=comparison))
+})
+
+save(res, file="ttest_results.Rdata")
+```
+
+1. Load in the attached "ttest_results.Rdata" file. It contains one object. What is its name and what kind of object it is?
+
+2. Check names of the elements of this object
+
+3. Extract results of a comparison for mice 20 weeks long. What is the mean of male and female weight at this age?
+
+
+
+
