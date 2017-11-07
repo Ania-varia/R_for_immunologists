@@ -53,7 +53,9 @@ y <- read.FCS(file.name, transformation="scale")
 ```
 
 ###Visualise
+
 Library *ggcyto* builds on *ggplot2* to visualise flow cytometry. 
+
 
 ```{r, eval=FALSE}
 require(ggcyto)
@@ -88,6 +90,7 @@ g + geom_density2d(colour = "black")
 
 
 ###Reading in a set of .FCS files
+
 Usually however we want to read a set of FCS files - into a `flowSet`. `FlowSet` stores also metadata about the whole grup of files - like expemerimental covariates.
 ```{r, eval=FALSE}
 fs <-read.flowSet(path=dir_with_FCS_files )
@@ -267,6 +270,7 @@ To explore more, like combining different experiments, automated gating etc., re
 ##Working with other software derived files
 
 ###Reading in and visualising FlowJo workspaces
+
 Requires a workspace (*.wsp* file) and FCS files.
 
 ```{r, eval=FALSE}
