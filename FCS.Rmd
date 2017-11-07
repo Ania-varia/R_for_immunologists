@@ -1,0 +1,360 @@
+---
+title: "R for Immunologists:  working with FCS files"
+author: "Anna Lorenc"
+date: "02/11/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, echo=FALSE, include=FALSE}
+require(flowCore)
+require(flowWorkspace)
+require(gridExtra)
+require(CytoML)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+dir_with_FCS_files <- "/Users/lorenca/Documents/teaching/RCourseImmunologist/immunology_specific/rawFCSfiles/"
+#MY PATH TO WHERE THIS FILE IS ~/Documents/teaching/RCourseImmunologist/immunology_specific/FlowJo Workspace
+```
+
+
+###Reading in a .FCS file
+Read in a single file into a `flowFrame`.
+```{r, eval=FALSE}
+
+require(flowCore)
+dir_with_FCS_files <- PATH TO DIR WITH FCS FILE 
+setwd(dir_with_FCS_files )
+file.name <- "SPLN_L000108770_G02_015.labelled.fcs"
+x <- read.FCS(file.name, alter.names=TRUE)
+x
+
+```
+
+###Have a peek what is inside
+Access raw events info and file metadata:
+```{r, eval=FALSE}
+summary(x)
+
+exprs(x)
+dim(exprs(x))
+
+names(x)
+featureNames(x)
+colnames(x)
+keyword(x)
+description(x)
+str(description(x))
+
+#Compare reading with and without transformation (with summary())
+x <- read.FCS(file.name)
+y <- read.FCS(file.name, transformation="scale")
+```
+
+###Visualise
+Library *ggcyto* builds on *ggplot2* to visualise flow cytometry. 
+
+```{r, eval=FALSE}
+require(ggcyto)
+
+#One dimension
+ggcyto(x, aes(x=APC.A)) +
+  geom_density(fill="black")
+autoplot(x, "APC.A")
+
+#Two dimensions
+ggcyto(x, aes(x=APC.A, y=PerCP.Cy5.5.A)) +
+  geom_hex()
+autoplot(x, "APC.A","PerCP.Cy5.5.A")
+
+ggcyto(x, aes(x=APC.A, y=PerCP.Cy5.5.A)) + geom_hex(bins=128) + theme_bw()
+autoplot(x, "APC.A","PerCP.Cy5.5.A", bins=128)
+
+g <- ggcyto(x,aes(x = `FSC-H`, y =  `SSC-H`)) +
+  geom_hex(bins=128)
+
+#Might be usefulto limit plotting to the instrument range
+g + ggcyto_par_set(limits = "instrument")
+
+#Changing colour scale etc.
+require(RColorBrewer)
+g + scale_fill_gradientn(colours = brewer.pal(n=8,name="PiYG"),trans="sqrt")
+g + scale_fill_gradient(trans = "sqrt", low = "gray", high = "black")
+g + geom_density2d(colour = "black")
+
+
+```
+
+
+###Reading in a set of .FCS files
+Usually however we want to read a set of FCS files - into a `flowSet`. `FlowSet` stores also metadata about the whole grup of files - like expemerimental covariates.
+```{r, eval=FALSE}
+fs <-read.flowSet(path=dir_with_FCS_files )
+fs
+colnames(fs)
+pData(fs)
+sampleNames(fs)
+varLabels(fs)
+
+name(fs)
+pData(fs)$name <-paste("spleen", 1:6, sep="")
+pData(fs)$genotype <-c(rep("KO",3), rep("WT",3))
+fs[[1]]
+fs[["spleen3"]]
+
+dim(exprs(fs[["spleen3"]]))
+
+autoplot(fs[[1]], 'FSC-A')
+autoplot(fs, 'FSC-A') + ggcyto_par_set(limits = "instrument")
+```
+
+
+###Applying transformations and gating manually
+
+*FlowCore* allows to explore effects of transformations and gating and split/subset `flowSet` and `flowFrame` accordingly. However, usually the `GatingHierarchy` and `GatingSet` are more suitable to use (scroll down).
+```{r, eval=FALSE}
+#(Advanced) play with transformations
+
+#Define transformation function
+mytransfFunction1 <- logTransform(logbase=10, r=1, d=1)
+
+#Prepare a list with transformations and channels to which they have to be applied
+myTrans <- transformList('FSC-A', mytransfFunction1) 
+
+#Apply transformations from your list to the flowSet object
+fs_f <-transform(fs, myTrans)
+
+#inspect influenc of transformation
+autoplot(fs[[1]], 'FSC-A')
+autoplot(fs_f[[1]], 'FSC-A')
+```
+
+```{r, eval=FALSE}
+#(Advanced) play with gates
+
+#Define a rectangle gate
+myRectGate <- rectangleGate(filterId="FluorescRegion", "FSC-H"=c(50000, 100000), "SSC-H"=c(0, 100000))
+
+#flowCore allows also data-driven gates, like bivariate normal distribution gate
+myNormGate <- norm2Filter("FSC-H", "SSC-H", method="covMcd", scale.factor=3, n=50000, filterId="defaultNorm2Filter")
+
+fs_g1 <- filter(fs[[1]],myRectGate)
+summary(fs_g1)
+
+fs_g2 <- filter(fs[[1]],myNormGate)
+summary(fs_g2)
+
+#fs_g1 and fs_g2 are filterResult objects
+```
+
+```{r, eval=FALSE}
+#(Advanced) Subset or split on gates
+#
+fs_3 <- Subset(fs, myRectGate)
+fs_3
+autoplot(fs_3, 'FSC-H')
+
+fs_4 <- split(fs, myRectGate)
+fs_4
+autoplot(fs_4[[1]], 'FSC-H')
+autoplot(fs_4[[2]], 'FSC-H')
+
+#Gates might be overlaid/used together
+filter(fs[[1]],myRectGate| myNormGate)
+```
+
+
+
+##GatingSet
+
+`GatingSet` and `GatingHierarchy` - analogous to `flowSet` and `flowFrame` - store  data from a set/single FCS file along with transformations, gating and other metadata.
+`GatingSet` migt be started by reading in a *FlowJo*/*Diva* Workspace, *OpenCyto* GatingML file or started fom a `flowSet` object. 
+```{r, eval=FALSE}
+require(flowWorkspace)
+
+#to start a Gatingset from a flowSet
+gs <- GatingSet(fs)
+```
+
+
+In the following example we'll use example files from the *flowWorkspace* vignette.
+
+#####Initiate GatingSet
+```{r, eval=FALSE }
+#Read in the files into a GatingSet
+
+  fcsfiles <- list.files(pattern = "CytoTrol", system.file("extdata", package = "flowWorkspaceData"), full = TRUE)
+  fcsfiles
+  fss <- read.flowSet(fcsfiles)
+  
+  #we want to change flowSet into gatingSet
+  gs <- GatingSet(fss)
+```
+
+
+#####Compensate
+```{r, eval=FALSE }
+## ----Compensate----
+# We'll cheat and apply a compensation matrix from another experiment. We'll read its compensation matrices
+gs_manual <- load_gs(list.files(pattern = "gs_manual"
+                                , system.file("extdata", package = "flowWorkspaceData")
+                                , full = TRUE))
+plot(gs_manual)
+comp <- getCompensationMatrices(gs_manual[[1]])
+comp
+
+#appplying compensation
+gs <- compensate(gs, comp)
+
+```
+
+#####Transform
+```{r , eval=FALSE }
+
+##We save un-transformed version of the data for future comparisons.
+fs_comp <- getData(gs) 
+
+
+#We define transformations - here logicle transformation for each of the parameters
+##get all channels' names
+chnls <- parameters(comp)
+##estimate parameters for estimateLogicle directly on GatingHierarchy object to generate transformerList automatically
+tf <- estimateLogicle(gs[[1]], chnls)
+##apply transformation
+gs <- transform(gs, tf)
+
+## Plot
+p1 <- autoplot(fs_comp[[1]], "B710-A") + ggtitle("raw")
+p2 <- autoplot(flowData(gs)[[1]], "B710-A") + 
+          ggtitle("trans") + 
+          ggcyto_par_set(limits = "instrument")
+
+require(gridExtra)
+grid.arrange(as.ggplot(p1), as.ggplot(p2), ncol = 2)
+```
+
+#####Gate
+```{r , eval=FALSE }
+
+##Add a gate
+rg1 <- rectangleGate("FSC-A"=c(50000, Inf), filterId="NonDebris")
+add(gs, rg1, parent = "root") #!!!!!!it changes the object "gs" in situ!
+getNodes(gs)
+# gate the data
+recompute(gs)
+
+##  Plot
+autoplot(gs, "NonDebris")
+
+## Plot
+ggcyto(gs, aes(x = `FSC-A`)) + geom_density() + geom_gate("NonDebris")  
+```
+
+
+
+#####Get stats
+```{r , eval=FALSE }
+getTotal(gs[[1]], "NonDebris")#counts
+getProp(gs[[1]], "NonDebris")#proportion
+getPopStats(gs)
+
+
+```
+
+To explore more, like combining different experiments, automated gating etc., read the *flowWorkspace* vignette.
+
+##Working with other software derived files
+
+###Reading in and visualising FlowJo workspaces
+Requires a workspace (*.wsp* file) and FCS files.
+
+```{r, eval=FALSE}
+ws <- openWorkspace("MY PATH TO WHERE THIS FILE IS/MOEA T.wsp")
+getSamples(ws)
+getSampleGroups(ws)
+
+gws <- parseWorkspace(ws,name=1)  
+closeWorkspace(ws)
+
+sampleNames(gws)
+
+
+#Following part does not require starting from a FlowJo workspace, it will work with every GatingSet with appropriate data 
+#Plot gating hierarchy:
+plot(gws)
+
+markernames(gws)
+getData(gws[[1]])
+
+getNodes(gws)
+nodelist <- getNodes(gws, path = "auto")
+node <- nodelist[3]
+
+g <- getGate(gws, node)
+g
+getPopStats(gws)
+
+#plot a chosen gate - this is a flowWorkspace function
+plotGate(gws, "Tregs") #one gate for all samples
+
+#add info about treatment
+Genotype <- c("KO","WT","WT","KO","KO","WT","WT","WT","WT","KO","KO","KO")
+pData(gws) <- cbind(pData(gws), Genotype)
+
+subset(gws, Genotype == "KO")
+
+
+
+gh <- gws[[1]]
+head(getPopStats(gh))
+
+
+pdf("sample1.pdf", width=15, height=20) #whole gating hierarchy
+plotGate(gws[[1]])
+dev.off()
+
+#For more on working with flowJo wokspaces: 
+vignette("plotGate")
+
+```
+
+### openCyto files
+Requires an xml file and FCS files.
+```{r, eval=FALSE}
+
+#read in cytobank gatingML
+fcsFiles <- list.files(pattern = "CytoTrol", system.file("extdata", package = "flowWorkspaceData"), full = T)
+xmlfile <- system.file("extdata/cytotrol_tcell_cytobank.xml", package = "CytoML")
+gs <- cytobank2GatingSet(xmlfile, fcsFiles)
+
+```
+
+###Diva Workspace
+Requires an xml file and FCS files.
+```{r, eval=FALSE}
+
+#read in Diva workspace
+ws <- openDiva(system.file('extdata/diva/PE_2.xml', package = "flowWorkspaceData"))
+gs <- parseWorkspace(ws, name = 2, subset = 1)
+
+```
+
+###Importing a gating hierarchy (with transformations, compensation etc.)
+Requires an xml file.
+```{r , eval=FALSE}
+#import gating hierarchy
+
+library(CytoML)
+xmlfile <- system.file("extdata/cytotrol_tcell_cytobank.xml", package = "CytoML")
+g  <-read.gatingML.cytobank(xmlfile)
+plot(g)
+
+#now you can use gates and transformations from g on a GatingSet with the same channels:
+trans <- getTransformations(g)
+gs <- compensate(gs, g)
+gs <- transform(gs, trans)
+gating(g, gs) #gating acts in situ - this will change gs
+```
+
+

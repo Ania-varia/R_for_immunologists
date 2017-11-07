@@ -1,0 +1,175 @@
+---
+title: 'R for immunologists: TCR sequences'
+author: "Anna Lorenc"
+date: "02/11/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+
+##TCR  analysis
+
+ We'll use an example data set coming with the package -  TCRB sequences from 4 individuals. Each repertoire was downsampled to the 10000 most abundant clonotypes.
+Sequences from one individual are stored in a data frame. Then these data frames are collected together in a list.
+
+#####Start
+
+
+```{r setup, include=FALSE}
+require(tcR)
+require(knitr)
+data(twb)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+
+```
+
+Load the package **tcR** in.
+```{r tcR, eval=FALSE}
+require(tcR)
+```
+
+Make sure the data set is visible and have a peek inside.
+```{r, eval=FALSE}
+data(twb) #to make the example data available
+str(twb)  #to investigate what is the object twb
+
+head(twb[[1]]) #to better see how one repertoire is stored
+
+```
+
+Additional option: download from github XXXXXX and load in the mixcr output with parse.folder()
+Other ways to read data in
+
+tcR contains also a vocabulary of human V/D/J segments:
+
+```{r genesegments, eval=FALSE}
+data(genesegments)
+genesegments
+
+MOUSE_IGHD #to find out, how to access other gene segments, read ?segments.alphabets 
+```
+
+###Summary of counts and reads
+Basic stats about the experiment.
+```{r, eval=FALSE}
+cloneset.stats(twb)
+repseq.stats(twb)
+```
+
+###Clonality
+If you would order clonotypes by aboundance, how many clonotypes are in top 25%?
+```{r, eval=FALSE}
+clonal.proportion(twb, 25) 
+```
+
+Top 20 clonotypes, what fraction of  the reads they occupy?
+```{r, eval=FALSE}
+top.proportion(twb, 20) 
+```
+
+Visualise clonality (clonotypes are ranked by aboundance again)
+```{r, eval=FALSE}
+vis.top.proportions(twb)
+```
+
+Clonal space homeostasis: specify your own thresholds:
+```{r, eval=FALSE}
+clonal.space.homeostasis(twb, c(Low = .005, Medium=0.01,High = 1))
+clonal.space.homeostasis(twb, c(Low = .005, Medium=0.01,High=0.2,Highest = 1))
+```
+
+To visualise:
+```{r, eval=FALSE}
+twb.space <- clonal.space.homeostasis(twb)
+vis.clonal.space(twb.space)
+```
+
+###In-frame, out-of-frame
+Count or filter out:
+```{r, eval=FALSE}
+count.outframes(twb)
+imm.in <- get.inframes(twb)
+count.outframes(imm.in)
+```
+
+###Search for a sequence
+
+It is possible to search for an exact sequence, differing by up to 1 substitutions (Hamming) or up to 1 change (Levenshtein). One can also examine only sequences matching by sequence AND V genes.
+
+Let's say we would like to find known CMV-specific CDR3 sequences. First, store the sequences we are inetersted in in a data frame (just a vector would be fine, bu we want additional columns for other info, like V genes).
+```{r, eval=FALSE}
+cmv <- data.frame(CDR3.amino.acid.sequence = c('CASSSANYGYTF', 'CSVGRAQNEQFF', 'CASSLTGNTEAFF', 'CASSALGGAGTGELFF', 'CASSLIGVSSYNEQFF'),
+                  V.genes = c('TRBV4-1', 'TRBV4-1', 'TRBV4-1', 'TRBV4-1', 'TRBV4-1'), stringsAsFactors = F)
+cmv
+```
+
+```{r, eval=FALSE}
+ find.clonotypes(.data = twb[1:2], .targets = cmv$CDR3.amino.acid.sequence , .method = 'exact',
+                  .col.name = c('Read.count', 'Total.insertions'),
+                  .verbose = F)
+
+ find.clonotypes(.data = twb, .targets = cmv , .method = 'hamm',
+                  .col.name = c('Read.counts', 'V.gene'),
+                  .verbose = F)
+```
+
+
+###Compare usage of gene segments
+
+Obtain summaries of VDJ gene usage or visualise them.
+```{r, eval=FALSE}
+
+imm.vs.all <- geneUsage(twb, HUMAN_TRBV)
+imm1.vj <- geneUsage(twb[[1]], list(HUMAN_TRBV, HUMAN_TRBJ))
+                     
+vis.gene.usage(twb, .genes = HUMAN_TRBJ, .main = 'twb J-usage dodge', .dodge = T) 
+vis.gene.usage(twb, .genes = HUMAN_TRBJ, .main = 'twb J-usage dodge', .dodge = F)      
+```
+
+Here, each sample gene frequencies were used for PCA.
+```{r, eval=FALSE}
+pca.segments(twb, .genes = HUMAN_TRBV) 
+```
+
+###Repertoire overlap
+
+How many and which sequences are shared between samples?
+
+####How many sequences are shared?
+
+You can test overlap on nucleotide/aminoacid level, with exact matches or within a distance; express them as counts or fraction of reads - check details of `repOverlap()`.
+```{r, eval=FALSE}
+
+repOverlap(twb, 'exact', 'nuc', .norm = F, .verbose = F)
+
+vis.heatmap(repOverlap(twb, 'exact', 'aa', .vgene = T, .verbose = F), .title = 'twb - (ave)-intersection', .labs = '')
+```
+
+
+How many clonesets are shared when top 500, 1000,...all clonesets are analysed?
+```{r, eval=FALSE}
+twb.top <- top.cross(.data = twb, .n = seq(500, 10000, 500), .verbose = F, .norm = T)
+top.cross.plot(twb.top)
+```
+
+Also other measures of overlap available (Tversky index, overlap coefficient, Morisita overlap).
+
+####Which sequences are shared?
+again, different levels of identity might be used - check  details of `shared.repertoire()`.
+```{r, eval=FALSE}
+imm.shared <- shared.repertoire(.data = twb, .type = 'avrc', .min.ppl = 2, .verbose = F)
+head(imm.shared)
+```
+
+###Diversity
+
+Several diversity indexes are implemented and might be used on chosen columns: *diversity*, *inverse sipmson index, gini index,chao1 index*.
+
+```{r, eval=FALSE}
+repDiversity(twb, 'div', 'read.count')
+sapply(twb, function (x) diversity(x$Read.count))
+```
+
+
