@@ -1,0 +1,135 @@
+---
+title: "Dplyr"
+author: "Anna Lorenc"
+date: "22/11/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+require(dplyr)
+require(ggplot2)
+path_to_gapminder <-"~/Documents/teaching/RCourseImmunologist/gapminder-FiveYearData.csv"
+```
+
+With the package _dplyr_, working with data frames is much easier. 
+Use:
+
+* *select()* to choose columns
+* *filter()* to choose rows
+* *arrange()* to sort rows
+* *mutate()* or *transmute()* to add new columns
+* *summarize()* to compute one-number summaries
+* *group_by()* to define groups of rows 
+* *%>%* to pass output of a function to another function
+
+Do not quote column names in arguments to these functions.
+Both input and output are data frames (or super-data frames, called _tibbles_).
+
+First, read the data from gapminder into a data frame:
+```{r , echo=TRUE, eval=FALSE}
+path_to_gapminder <-PATH TO THE GAPMINDER FILE ON OUR COMPUTER
+gapminder <-read.csv(file = path_to_gapminder, header=TRUE)
+head(gapminder)
+```
+
+##filter
+
+Get all entries from the year 2002:
+```{r, echo=TRUE, eval=FALSE}
+filter(gapminder, year==2002)
+```
+ 
+ Get all entries from Africa, from the 1970-ties:
+```{r, echo=TRUE, eval=FALSE}
+filter(gapminder, year>=1970 &year <1980, continent=="Africa")
+```
+
+Now your turn: find all the African countries which had GDP per capita below 1000 in our century.
+
+##select
+
+Show only columns with the country names, life expectancy and year:
+```{r, echo=TRUE, eval=FALSE}
+select(gapminder, country, year, lifExp)
+```
+
+##arrange
+
+Order rows alphabetically by continents and within continents by countries
+```{r, echo=TRUE, eval=FALSE}
+arrange(gapminder, continent,country, year)
+```
+
+
+##%>%
+
+Combine the steps together. Get only entries from the year 2007, use only columns with  country names, life expectancy and year, sort by country name.  You do not have to write every step in a separate line, but it helps readability.
+```{r, echo=TRUE, eval=FALSE}
+filter(gapminder, year==2007) %>%
+  select( country, year, lifExp) %>%
+  arrange(country)
+```
+
+To keep the final data frame as an object, use  <- assignmenet, as usual:
+
+```{r, echo=TRUE, eval=FALSE}
+gapminder_subset <- filter(gapminder, year==2007) %>%
+                    select( country, year, lifExp) %>%
+                    arrange(country)
+```
+
+
+Now your turn:
+
+* Get all asiatic countries, sorted by their gdpPercap (from highest to lowest), without lifeExp
+* Extract  the rows about Zimbabwe and Iceland, with data after 1960. Plot (use ggplot2) life expectancy in time.
+
+##mutate
+
+Add a new column, with total GDP in bilions of dollars
+```{r , echo=TRUE, eval=FALSE}
+mutate(gapminder, GDP = gdpPercap * pop / 10^9)
+```
+
+Now your turn:
+
+* Add a new column with life expectancy above 50 years (subtract 50 from life expectancy)
+* Add a new column with GDP per capita, but in pounds
+
+
+##summarize
+
+How many people lived in Asia in 1952?
+```{r, echo=TRUE, eval=FALSE}
+filter(gapminder, continent=="Asia", year==1952) %>% summarize( people=sum(pop))
+```
+
+Now your turn:
+
+* What was the total GDP in Europe in 2002?
+* What was GDP per capita in Europe in 2002?
+
+##group_by
+
+What was the total population of each continent in 2007? First define grouping, then summarise:
+```{r , echo=TRUE, eval=FALSE}
+group_by(gapminder, continent) %>% summarise(total_pop=sum(pop))
+```
+
+Now your turn:
+
+* Get maximal life expectancy for every country
+* For 2007, compute GDP per capita for every continent.
+
+#Challenge
+
+Read the content of the file `APCmin_Natalie_data.csv` into APCmin_Natalie_data
+
+1. Prepare a dataframe APCmin_Natalie_data_thin without columns Coat Colour, Earclip, Genetic Background, Cohort, QC Status, QC Comments, Recorded By
+2. Add a column with age of mice when weighted
+3. Compute minimum and maximum weight by sex
+4. Compute average weight by genotype and sex.
+5. Extract data for all mice with the genotype Btnl1-B12/Btnl1-B12 Min:-ve. Compute average weight by genotype and sex.
+6. For each mouse, check how many times it was weighted and how long was the time between first and last weighting.
+
+For 2-6, present the results with a ggplot2 plot (there are many ways of presenting the data, so play with the options).
